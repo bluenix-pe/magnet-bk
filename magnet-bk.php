@@ -2,16 +2,16 @@
 <?php
 /*********************************************************************
 *
-* magnet-bk v1.0 - Facilitador de Backups Remotos
+* magnet-bk v1.0 - Remote Backup Facilitator
 *
 * Config File : config.php
 *
-* Uso         : magnet-bk.php [-nv][-y][-nz]
-* Ayuda       : magnet-bk.php --help
-* Autor       : Fernando Diaz Sanchez <sirfids@gmail.com>
-* Fecha       : 25 Junio 2018
-* Modificado  : 26 Junio 2018
-* Requerido   : PHP 5.0+, readline, mysql tools, db admin user
+* How to use  : magnet-bk.php [-nv][-y][-nz][--config-mysql]
+* Help        : magnet-bk.php --help
+* Author      : Fernando Diaz Sanchez <sirfids@gmail.com>
+* Date        : 2018/Jun/25
+* Modified    : 2018/Jun/28
+* Requirement : PHP 5.0+, readline, mysql tools, db admin user
 *
 ********************************************************************/
 
@@ -22,16 +22,18 @@ if (file_exists("config.php")){
 	exit(1);
 }
 
-// Mostrar Ayuda
+// Show Help ?
 if ( ARG_HELP ){ show_help(); exit(0);}
+
+// Show config mysql user ?
 if ( CONFIG_MYSQL ) { mysql_show_config(); exit(0);}
 
-// Procesar Lista de Servidores
+// Process Server List
 backup_servers($servers);
 
 function backup_servers($lista){
 
-	// 1: Revisar el tipo de servidor
+	// 1: Check type of server
 	foreach($lista as $srv)
 	{
 		switch($srv['engine']){
@@ -42,7 +44,7 @@ function backup_servers($lista){
 
 function mysql_backup_server($srv){	
 
-	// Seteando las variables de configuracion del servidor
+	// Setting config server variables
 	$strAlias     = $srv['nombre'];
 	$strBServidor = $srv['bservidor'];
 	$strBPuerto   = $srv['bpuerto'];
@@ -67,12 +69,12 @@ function mysql_backup_server($srv){
 
 	$intNroBD = mysql_count_databases($rstDatabases);
 	
-	// Revisar si estan seteadas las librerias adicionales
+	// Check if lib variables are set
 	$strLibrary = "";
 	if ($srv['library'] != ""){
 		$strLibrary = "LD_LIBRARY_PATH=" . $srv['library'] .
 				":/lib:/usr/lib/mysql";
-		// Setear Variables de Entorno
+		// Set ENV variables
 		putenv($strLibrary);
 	}
 
@@ -87,21 +89,21 @@ function mysql_backup_server($srv){
 	if ( VERBOSE )
 		echo colorStr("\n[Generando Backups]\n\n","cyan");
 
-	// Recorrer  todas las bases de datos con excepcion de *_schema
-        foreach($rstDatabases as $vDB)
+	// Loop all databases except *_schema
+    foreach($rstDatabases as $vDB)
 	{
 		mysql_backup_database($srv,$vDB,$i);
 		$i++;
-        } // Fin de DB
+    } // End Loop databases
 	
 	delete_old_backups($strBPathBK,$strFullPathLog);
 
-} // Fin backup_servers
+} // End backup_servers
 
 function delete_old_backups($PathBackup,$strFullPathLog){
 	if ( VERBOSE )
 		echo colorStr("\n[Eliminando Backups Antiguos]\n\n","cyan");
-	// Depuramos Backups antiguos
+	// Delete old backups
 	$strCmd = "find $PathBackup/ -mtime +" . MAX_DAYS . 
 		  " -name '*.gz' -exec rm -rf {} \;";
 	$strLog =  date("Ymd H:i:s : ") . $strCmd . "\n";
@@ -111,7 +113,7 @@ function delete_old_backups($PathBackup,$strFullPathLog){
 
 function mysql_backup_database($srv,$vDB,$i){
 	
-	// Seteando las variables de configuracion del servidor
+	// Setting config server variables
 	$strAlias     = $srv['nombre'];
 	$strBPuerto   = $srv['bpuerto'];
 	$strBBase     = $srv['bbase'];
@@ -124,7 +126,7 @@ function mysql_backup_database($srv,$vDB,$i){
 	$strFullPathLog = $strPathLog . "/" . LOGNAME;
 	$hasProc = true;
 
-	// Seteando datos de cada BD
+	// Prepare DB variables
 	$strNombreBD     = $vDB['Database'];
 	$PathBackup      = $srv['bpath'];
 	$strNombreBackup = $PathBackup . "/" . $strNombreBD . 
@@ -164,10 +166,10 @@ function mysql_exec_backup($strCmd,$strNombreError,$strNombreBD,
 	$strFullPathLog,$strNombreBackup){
 	
 	$hasError = false;
-	// Ejecutar comando
+	// Execute OS Command
 	@system($strCmd);
 
-	// Si hubo errores	
+	// If there was errors
 	if ( file_exists($strNombreError) && 
 		strlen(file_get_contents($strNombreError)) > 0)
 	{
@@ -180,13 +182,13 @@ function mysql_exec_backup($strCmd,$strNombreError,$strNombreBD,
 		$strLog =  DAYFORMAT . " : " . $strError . "\n";
 		@error_log( $strLog, 3, $strFullPathLog );
 	}
-	else  // Si no hubo errores
+	else  // Otherwise
 	{
 		$strOK = str_pad("[  OK  ]", 30 - strlen($strNombreBD),
 				" ",STR_PAD_LEFT) . "\n";
 		if ( VERBOSE ) echo colorStr($strOK,"green");
 
-		// Comprimiendo la base de datos
+		// Zip the Database
 		if ( !NOZIP ){
 			$strZip = "/bin/gzip $strNombreBackup";
 			@system($strZip);
@@ -196,7 +198,7 @@ function mysql_exec_backup($strCmd,$strNombreError,$strNombreBD,
 	}
 	sleep(1);
 	if ( !$hasError ){
-		// Eliminar el archivo de errores porque no los hubo
+		// Delete error file
 		@system("rm $strNombreError");
 		return true;
 	}else{
@@ -235,7 +237,7 @@ function confirm_backup(){
 
 	if ( YESALL == false )
 	{
-		// Pedir la confirmacion del Operador
+		// Ask confirmation
 		while( $rpta != "Y" && $rpta != "N" )
 		{
 			$rpta = strtoupper(readline("Aceptar (Y/N):"));
@@ -281,11 +283,10 @@ function mysql_show_resume($strAlias,$intNroBD,$strBServidor,$strVersion,
 function mysql_count_databases($rstDatabases){
 
 	$intNroBD = 0;
-	// Se realiza el recorrido por todas las bases de datos
+	// Loop all DB
 	foreach($rstDatabases as $vDB)
 	{
-		// Contamos el nro de Base de Datos menos 
-		// la base information_schema
+		// Counting databases except *_schema
 		if ( $vDB['Database'] != "information_schema" &&
 			$vDB['Database'] != "performance_schema"){ 
 			$intNroBD++;
@@ -298,7 +299,7 @@ function mysql_count_databases($rstDatabases){
 function mysql_get_databases($strBServidor,$strBBase,
 	$strBPuerto,$strBUsuario,$strBClave){
 
-	// Test de conexion al servidor
+	// DB Connection and get all databases
 	try{
 		$clsBase = new cliente($strBServidor,$strBBase,
 					$strBPuerto,$strBUsuario,
@@ -323,7 +324,7 @@ function mysql_get_databases($strBServidor,$strBBase,
 	return $rstDatabases;
 }
 
-// Devuelve true or false si encuentra parte de una cadena en el array
+// Returns boolean if $strText are found in $arr
 function in_array_ex($arr,$strText)
 {
 	foreach($arr as $val)
@@ -354,9 +355,7 @@ function extraer_argv_ex($arr,$strParam)
 // Returns colored string
 function colorStr($string, $fgc = null, 
 			$bgc = null) {
-	/* Colores para el Terminal */
-
-	// Colores de texto
+	// Text Colors
 	$fg_color['black']	= '0;30'; $fg_color['dark_gray']= '1;30';
 	$fg_color['blue']	= '0;34'; $fg_color['lblue']	= '1;34';
 	$fg_color['green']	= '0;32'; $fg_color['lgreen']	= '1;32';
@@ -366,7 +365,7 @@ function colorStr($string, $fgc = null,
 	$fg_color['brown']	= '0;33'; $fg_color['yellow']	= '1;33';
 	$fg_color['lgray']	= '0;37'; $fg_color['white']	= '1;37';
 
-	// Colores de Fondo
+	// Background Colors
 	$bg_color['black']	= '40'; $bg_color['red']	= '41';
 	$bg_color['green']	= '42'; $bg_color['yellow']	= '43';
 	$bg_color['blue']	= '44'; $bg_color['magenta']	= '45';
@@ -404,7 +403,6 @@ function show_help(){
 	echo colorStr("magnet-bk ". VERSION ." - Facilitador " .
 			 "de Backups Remoto BD - " .
 			 "By >>bluenix\n","cyan");
-	#echo colorStr("Uso: magnet-bk.php [-- [-nv][-y][-nz] ]\n","cyan");
 	echo colorStr("Uso: magnet-bk.php [-nv][-y][-nz]\n","cyan");
 	echo colorStr("Opc: -nv  : No verbose\n","white");
 	echo colorStr("Opc: -y   : Yes to All\n","white");
@@ -415,9 +413,7 @@ function show_help(){
  
 class cliente
 {
-
-	/* Variables Miembro*/
-	private $m_ad;	// Instancia de Acceso a Datos
+	private $m_ad;	// Database Instance
 	
 	function __construct($strServer,$strBase,
 				$strPuerto,$strUsuario,$strClave)
@@ -448,16 +444,13 @@ class cliente
 
 class acceso
 {
-	/* Variables Miembro*/
-	
-	private $m_IDCnx;		// ID de la Conexion a la DB
+	private $m_IDCnx;		// Connection ID
 	private $m_Res;			// Query Result Resource
-	private $m_EnTrx = false;	// Hay Transaccion ?
+	private $m_EnTrx = false;	// This is a Transaction ?
 	private $m_rec = array();	// Record
 	private $m_rst = array();	// Recordset
 	
 	/* Constructor y Destructor */
-	
 	function __construct($strServidor,$strBase,$intPuerto,
 				$strUsuario,$strClave)
 	{
@@ -470,33 +463,32 @@ class acceso
 	{
 		$result = false;
 		
-		// Si existe un id de conexion
+		// If there are an active connection
 		if ($this->m_IDCnx)
 		{
-			// Terminar cualquier transaccion en curso
+			// End any transaction
 			if ($this->m_EnTrx == true)
 			{
 				@mysqli_commit($this->m_IDCnx);
 				$this->m_EnTrx = false;
 			}
 			
-			// Libera recursos
+			// Free resources
 			if ($this->m_Res)
 			{
 				@mysqli_free_result($this->m_Res);
 			}
 			
-			// Cerramos la conexion
+			// And close the connection
 			$result = @mysqli_close($this->m_IDCnx);
 		}
 		else
 		{
-			// Retornamos FALSE si no hay una 
-			// conexion activa
+			// If there are no connection then false
 			$result = false;
 		}
 		
-		// Eliminar variables miembro
+		// Clean members variables
 		unset($this->m_EnTrx);
 		unset($this->m_IDCnx);
 		unset($this->m_rec);
@@ -509,10 +501,11 @@ class acceso
 	/**
 	 * conectar
 	 * 
-	 * Conecta a una base de datos Mysql
+	 * Make a mysql database connection
 	 * @author Fernando Daz Sanchez <sirfids@gmail.com>
 	 * @param $strTipoUsuario
-	 * @return Id de Conexió */
+	 * @return Connection ID or false
+	 * */
 	private function conectar($strServer,$strBase,$intPuerto,
 		$strUsuario,$strClave)
 	{
@@ -522,10 +515,10 @@ class acceso
 							$strBase,
 							$intPuerto);
 		
-		// Si hubo algun error
+		// If some error happens
 		if( mysqli_connect_errno() )
 		{
-			// lanzar una excepcion
+			// Make an exception
 			throw new exception(mysqli_connect_error(), 
 					    mysqli_connect_errno());
     		}
@@ -536,27 +529,27 @@ class acceso
 	/**
 	 * consultar
 	 * 
-	 * Realiza una consulta SQL o ejecuta un procedimiento almacenado
+	 * Make a mysql query or execute an store procedure
 	 * @author Fernando Diaz Sanchez <sirfids@gmail.com>
 	 *
 	 * @param $strSQL
 	 * @param $bolTransaccion
 	 * @return unknown
-	 * @todo Patron para LIMIT
+	 * @todo LIMIT
 	 */
 	public function consultar($strSQL, $bolTransaccion = false)
 	{
-		// limpiar result
+		// Free previous result
 		if ($this->m_Res) 
 			@mysqli_free_result($this->m_Res);
 		
-		// Eliminamos cualquier consulta pre-existente
+		// Delete previous query result
 		unset($this->m_Res);
 		
-		// Verificamos si la consulta enviada no esta vacia
+		// Check if query is not empty
 		if ($strSQL != '')
 		{
-			// Validando para iniciar una transaccion
+			// Check transaction starting
 			if ( $bolTransaccion == true && 
 				!$this->m_EnTrx )
 			{
@@ -572,14 +565,14 @@ class acceso
 				}
 			}
 			
-			// Ejecutamos la consulta
+			// Execure SQL Query
 			$this->m_Res = @mysqli_query($this->m_IDCnx,$strSQL);
 			@mysqli_next_result($this->m_IDCnx);
 			
-			// Verificando si la consulta tuvo exito
+			// Check if everything is ok
 			if ( $this->m_Res )
 			{
-				// Validando fin de transaccion
+				// Check end of transaction
 				if ($bolTransaccion == false && 
 					$this->m_EnTrx)
 				{
@@ -602,8 +595,8 @@ class acceso
 			}
 			else
 			{
-				// Si la consulta no tuvo exito, 
-				// verificamos no estar en transaccion
+				// If query fails, check if there are
+				// no transaction
 				if ( $this->m_EnTrx )
 				{
 					@mysqli_rollback($this->m_IDCnx);
@@ -626,17 +619,17 @@ class acceso
 		}
 		else
 		{
-			// Si no se envio nada, validamos 
-			// para cerrar la transaccion
+			// If SQL Query is empty
+			// check and close the transaction
 			if ($bolTransaccion == false && 
 				$this->m_EnTrx == true)
 			{
 				$this->m_EnTrx = false;
 				
-				// Si hubo algun problema al enviar el COMMIT
+				// If COMMIT fails
 				if ( !@mysqli_commit($this->m_IDCnx) )
 				{
-					// Se efectua un ROLLBACK
+					// ROLLBACK comes
 					@mysqli_rollback($this->m_IDCnx);
 					@mysqli_autocommit($this->m_IDCnx,true);
 					throw new 
@@ -655,7 +648,7 @@ class acceso
 	/**
 	 * get_recordset
 	 * 
-	 * Obtiene el recordset de una consulta sql
+	 * Get a recordset from an SQL Query
 	 * @author Fernando Diaz Sanchez <sirfids@gmail.com>
 	 *
 	 * @param $resQueryId
@@ -665,18 +658,18 @@ class acceso
 	public function get_recordset($resQueryId = 0, 
 		$bolAssoc = true)
 	{
-		// Si no se envio un Query Result
+		// If there are no Query result
 		if( !$resQueryId )
 		{
 			$resQueryId = $this->m_Res;
 		}
 		
-		// Si existe un Query ID
+		// If Query ID is OK
 		if ( $resQueryId )
 		{
 			$result = false;
 			
-			// Seteamos el tipo de resultado
+			// Set the result type
 			$type = ( $bolAssoc ) ? MYSQLI_ASSOC : MYSQLI_BOTH;
 			
 			do

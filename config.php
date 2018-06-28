@@ -3,8 +3,7 @@
 /**
  * config.php
  * 
- * Archivo de configuracion donde guarda los datos de conexion a la
- * base de datos MySQL y del generador de Backups
+ * magnet-bk config file
  * 
  */
 
@@ -15,48 +14,48 @@ define("VERSION","1.0");
 define("TIMEZONE","America/Lima");
 @date_default_timezone_set(TIMEZONE);
 
-// Formato de Fecha
+// Day format
 define("DAYFORMAT",date("Ymd_His"));
 
 // Log names
 define("LOGNAME","magnet-bk." . date("Ymd") . ".log");
 
-/* Periodo Maximo de Retencion de Backups */
+/* Max retain log days */
 define("MAX_DAYS",2);
 
-/* Directorio donde esta instalado magnet-bk */
+/* Dir where magnet-bk is installed */
 define("INSTALL_DIR", dirname(dirname(__DIR__)));
 
-// Mostrar detalles
+// Show details
 define("VERBOSE",in_array("-nv",$argv) ? false: true);
 
-// Atencion desatendida
+// Don't ask questions
 define("YESALL",in_array("-y",$argv) ? true: false);
 
-// SOlicita configuracion de usuario MySQL
+// Show how to config mysql user
 define("CONFIG_MYSQL",in_array("--config-mysql",$argv) ? true: false);
 
-// Sin Compresion
+// No commpresion ?
 define("NOZIP",in_array("-nz",$argv) ? true: false);
 //$wserv      = in_array_ex($argv,"--server=")    ? true: false;
 //$wdata      = in_array_ex($argv,"--databases=") ? true: false;
 
-// Mostrar Ayuda
+// Show Help
 define("ARG_HELP",in_array("--help",$argv) ? true: false);
 
-/* Configuracion de Granja de Servidores */
+/* Config Server Farm */
 
-/* Path del Backup                        */
-/* NO INCLUIR SLASH AL FINAL              */
-/* Ejemplo: "bpath" => "/backups"         */
+/* Backup Path                            */
+/* DON'T PUT SLASH AT THE END OF LINE     */
+/* Example: "bpath" => "/backups"         */
 
 $servers = array(
 
-	// Servidor Nro 0
+	// Server # 0
 	0 => array("engine" => "mysql", "version" => "5",
 		   "nombre" => "local", "bservidor" => "localhost", 
 		   "bbase" => "mysql", "bpuerto" => "3306", 
-		   "busuario" => "backup", "bclave" => "mi-clave" ,
+		   "busuario" => "root", "bclave" => "123456" ,
 		   "bpath" => "/root/bk","library" => "",
 		   "bin" => "/usr/bin/mysqldump", 
 		   "extra" => "--compress",

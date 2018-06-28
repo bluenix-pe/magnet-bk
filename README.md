@@ -22,7 +22,7 @@ magnet-bk es una pequeña y rápida herramienta que envuelve las utilidades de b
 
 ## Primeros pasos
 
-1. git clone <this repo>
+1. git clone https://github.com/bluenix-pe/magnet-bk.git
 2. configurar el archivo config.php
 3. chmod +x magnet.bk.php
 4. ./magnet-bk.php

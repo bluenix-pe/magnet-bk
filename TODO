@@ -1,0 +1,33 @@
+-------------------------------------------------------------------------
+ TODO
+-------------------------------------------------------------------------
+
+* Agregar configuracion interactiva 
+  Permitira crear el usuario de backup en base mysql de servidor remoto
+
+* Agregar soporte web
+  Permitira desplegar una pagina web via apache u otro webserver
+
+* Agregar soporte web self-server
+  Permitira brindar su propio servidor web en caso no exista un webserver
+
+* Agregar filtro de exclusion
+  Permitira excluir una determinada bd
+
+* Agregar filtro de backup individual
+  Permitira ejecutar el backup de 1 sola bd
+
+* Agregar soporte para restaurar backups
+  Permitira restaurar backups de las bd en otro servidor
+
+* Agregar soporte para sincronizar bd
+  Permitira sincronizar solo las bd que han cambiado entre 2 servidores
+
+* Agregar drivers para pgsql
+  Permitira gestionar backups para bd PostgreSQL
+
+* Agregar i18n
+  Permitira manejar varios idiomas
+
+* Agregar soporte para recovery
+  Permitira mecanismos de recuperacion de bd

@@ -53,9 +53,9 @@ $servers = array(
 
 	// Server # 0
 	0 => array("engine" => "mysql", "version" => "5",
-		   "nombre" => "local", "bservidor" => "localhost", 
-		   "bbase" => "mysql", "bpuerto" => "3306", 
-		   "busuario" => "root", "bclave" => "123456" ,
+		   "name" => "local", "bserver" => "localhost", 
+		   "bbase" => "mysql", "bport" => "3306", 
+		   "buser" => "root", "bpass" => "123456" ,
 		   "bpath" => "/root/bk","library" => "",
 		   "bin" => "/usr/bin/mysqldump", 
 		   "extra" => "--compress",

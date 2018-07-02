@@ -45,29 +45,29 @@ function backup_servers($lista){
 function mysql_backup_server($srv){	
 
 	// Setting config server variables
-	$strAlias     = $srv['nombre'];
-	$strBServidor = $srv['bservidor'];
-	$strBPuerto   = $srv['bpuerto'];
+	$strAlias     = $srv['name'];
+	$strBServer   = $srv['bserver'];
+	$strBPort     = $srv['bport'];
 	$strBBase     = $srv['bbase'];
-	$strBUsuario  = $srv['busuario'];
-	$strBClave    = $srv['bclave'];
+	$strBUser     = $srv['buser'];
+	$strBPass     = $srv['bpass'];
 	$strBPathBK   = $srv['bpath'];
 	$strVersion   = $srv['version'];
 	$strBinary    = $srv['bin'];
 	$strPathLog   = $srv['logs'];
 	$strFullPathLog = $strPathLog . "/" . LOGNAME;
 
-	$intNroBD     = 0;
+	$intNroDB     = 0;
 	$hasProc      = false;
 	$strLog       = "";
 	$i 	      = 0;
 
-	$rstDatabases = mysql_get_databases($strBServidor,$strBBase,
-				$strBPuerto,$strBUsuario,
-				$strBClave);
+	$rstDatabases = mysql_get_databases($strBServer,$strBBase,
+				$strBPort,$strBUser,
+				$strBPass);
 	if ($rstDatabases == false){ return false;}
 
-	$intNroBD = mysql_count_databases($rstDatabases);
+	$intNroDB = mysql_count_databases($rstDatabases);
 	
 	// Check if lib variables are set
 	$strLibrary = "";
@@ -79,9 +79,9 @@ function mysql_backup_server($srv){
 	}
 
 	if (VERBOSE){
-		mysql_show_resume($strAlias,$intNroBD,$strBServidor,
+		mysql_show_resume($strAlias,$intNroDB,$strBServer,
 				$strVersion,$strBPathBK,$strPathLog,
-				$strLibrary,$strBUsuario);
+				$strLibrary,$strBUser);
 	}
 
 	if (confirm_backup()==false){ return false; }
@@ -114,47 +114,47 @@ function delete_old_backups($PathBackup,$strFullPathLog){
 function mysql_backup_database($srv,$vDB,$i){
 	
 	// Setting config server variables
-	$strAlias     = $srv['nombre'];
-	$strBPuerto   = $srv['bpuerto'];
+	$strAlias     = $srv['name'];
+	$strBPort     = $srv['bport'];
 	$strBBase     = $srv['bbase'];
-	$strBUsuario  = $srv['busuario'];
-	$strBClave    = $srv['bclave'];
+	$strBUser     = $srv['buser'];
+	$strBPass     = $srv['bpass'];
 	$strVersion   = $srv['version'];
 	$strBinary    = $srv['bin'];
 	$strPathLog   = $srv['logs'];
-	$strExtraParam = $srv['extra'];
+	$strExtraParam  = $srv['extra'];
 	$strFullPathLog = $strPathLog . "/" . LOGNAME;
 	$hasProc = true;
 
 	// Prepare DB variables
-	$strNombreBD     = $vDB['Database'];
+	$strDBName     = $vDB['Database'];
 	$PathBackup      = $srv['bpath'];
-	$strNombreBackup = $PathBackup . "/" . $strNombreBD . 
+	$strBackupName = $PathBackup . "/" . $strDBName . 
 				"." . DAYFORMAT;
-	$strNombreError  = $strPathLog . "/" . $strNombreBD . 
+	$strErrorFile  = $strPathLog . "/" . $strDBName . 
 				".$i.err";
-	$strIP           = $srv['bservidor'];
+	$strIP           = $srv['bserver'];
 	$result          = false;
 	$strWithProc     = "";
 	$strWithTrig     = "";
 
-	if ( $strNombreBD != "information_schema" &&
-		$strNombreBD != "performance_schema"){
+	if ( $strDBName != "information_schema" &&
+		$strDBName != "performance_schema"){
 
 		$strCmd = mysql_get_cmd($hasProc,$strVersion,$strBinary,
-				$strBUsuario,$strBClave,$strIP,
-				$strNombreBD,$strNombreBackup,
-				$strNombreError,$strFullPathLog,
+				$strBUser,$strBPass,$strIP,
+				$strDBName,$strBackupName,
+				$strErrorFile,$strFullPathLog,
 				$strExtraParam);
 
 		if ( VERBOSE ){
 			echo colorStr("Generando Backup para ".
 					"la Base de Datos ","white");
-			echo colorStr($strNombreBD,"cyan");
+			echo colorStr($strDBName,"cyan");
 		}
 
-		$result = mysql_exec_backup($strCmd,$strNombreError,
-			$strNombreBD,$strFullPathLog,$strNombreBackup);
+		$result = mysql_exec_backup($strCmd,$strErrorFile,
+			$strDBName,$strFullPathLog,$strBackupName);
 		
 	}
 
@@ -162,20 +162,20 @@ function mysql_backup_database($srv,$vDB,$i){
 
 }
 
-function mysql_exec_backup($strCmd,$strNombreError,$strNombreBD,
-	$strFullPathLog,$strNombreBackup){
+function mysql_exec_backup($strCmd,$strErrorFile,$strDBName,
+	$strFullPathLog,$strBackupName){
 	
 	$hasError = false;
 	// Execute OS Command
 	@system($strCmd);
 
 	// If there was errors
-	if ( file_exists($strNombreError) && 
-		strlen(file_get_contents($strNombreError)) > 0)
+	if ( file_exists($strErrorFile) && 
+		strlen(file_get_contents($strErrorFile)) > 0)
 	{
 		$strError = str_pad("[ ERROR ] (Mas detalles en ".
-				   "$strNombreError)", 
-				   30 - strlen($strNombreBD)," ",
+				   "$strErrorFile)", 
+				   30 - strlen($strDBName)," ",
 				   STR_PAD_LEFT) . "\n";
 		if ( VERBOSE ) echo colorStr($strError,"red");
 		$hasError = true;
@@ -184,13 +184,13 @@ function mysql_exec_backup($strCmd,$strNombreError,$strNombreBD,
 	}
 	else  // Otherwise
 	{
-		$strOK = str_pad("[  OK  ]", 30 - strlen($strNombreBD),
+		$strOK = str_pad("[  OK  ]", 30 - strlen($strDBName),
 				" ",STR_PAD_LEFT) . "\n";
 		if ( VERBOSE ) echo colorStr($strOK,"green");
 
 		// Zip the Database
 		if ( !NOZIP ){
-			$strZip = "/bin/gzip $strNombreBackup";
+			$strZip = "/bin/gzip $strBackupName";
 			@system($strZip);
 			$strLog =  DAYFORMAT . " : " . $strZip . "\n";
 			@error_log( $strLog, 3, $strFullPathLog );
@@ -199,31 +199,31 @@ function mysql_exec_backup($strCmd,$strNombreError,$strNombreBD,
 	sleep(1);
 	if ( !$hasError ){
 		// Delete error file
-		@system("rm $strNombreError");
+		@system("rm $strErrorFile");
 		return true;
 	}else{
 		return false;
 	}
 }
 
-function mysql_get_cmd($hasProc,$strVersion,$strBinary,$strBUsuario,
-	$strBClave,$strIP,$strNombreBD,$strNombreBackup,
-	$strNombreError,$strFullPathLog,$strExtraParam){
+function mysql_get_cmd($hasProc,$strVersion,$strBinary,$strBUser,
+	$strBPass,$strIP,$strDBName,$strBackupName,
+	$strErrorFile,$strFullPathLog,$strExtraParam){
 	
 	$strWithProc = ( $hasProc ) ? "--routines " : "";
 	$strWithTrig = ( $strVersion == "5" ) ? "--triggers " : "";
 
 	$strCmd  = "$strBinary --add-drop-database -a ".
 		   "$strWithTrig $strWithProc $strExtraParam " .
-		   "-u " . $strBUsuario . " -p" . $strBClave . 
-		   " -h $strIP --databases $strNombreBD > " .
-		   "$strNombreBackup 2>$strNombreError";
+		   "-u " . $strBUser . " -p" . $strBPass . 
+		   " -h $strIP --databases $strDBName > " .
+		   "$strBackupName 2>$strErrorFile";
 
 	$strLogCmd = "$strBinary --add-drop-database -a ".
 		     "$strWithTrig $strWithProc $strExtraParam " .
-		     "-u " . $strBUsuario . " -p" . 
-		     " -h $strIP --databases $strNombreBD " .
-		     " > $strNombreBackup 2>$strNombreError";
+		     "-u " . $strBUser . " -p" . 
+		     " -h $strIP --databases $strDBName " .
+		     " > $strBackupName 2>$strErrorFile";
 
 	$strLog = date("Ymd H:i:s : ") . $strLogCmd . "\n";
 	@error_log( $strLog, 3, $strFullPathLog );
@@ -250,16 +250,16 @@ function confirm_backup(){
 	return true;
 }
 
-function mysql_show_resume($strAlias,$intNroBD,$strBServidor,$strVersion,
-	$strBPathBK,$strPathLog,$strLibrary,$strBUsuario){
+function mysql_show_resume($strAlias,$intNroDB,$strBServer,$strVersion,
+	$strBPathBK,$strPathLog,$strLibrary,$strBUser){
 	
 	echo colorStr("\n[Resumen de Tareas - Servidor '".
 			$strAlias."']\n","cyan");
 	echo colorStr("\n* Sacar backups de " .
-			"$intNroBD base de datos del servidor '" . 
-			$strBServidor . "'\n","white");
+			"$intNroDB base de datos del servidor '" . 
+			$strBServer . "'\n","white");
 	echo colorStr("* Se utilizara el usuario mysql ","white");
-	echo colorStr("'$strBUsuario'","yellow");
+	echo colorStr("'$strBUser'","yellow");
 	echo colorStr(" para generar el backup\n","white");
 	echo colorStr("* Los backups se guardaran en la carpeta '","white");
 	echo colorStr($strBPathBK,"yellow");
@@ -282,28 +282,28 @@ function mysql_show_resume($strAlias,$intNroBD,$strBServidor,$strVersion,
 
 function mysql_count_databases($rstDatabases){
 
-	$intNroBD = 0;
+	$intNroDB = 0;
 	// Loop all DB
 	foreach($rstDatabases as $vDB)
 	{
 		// Counting databases except *_schema
 		if ( $vDB['Database'] != "information_schema" &&
 			$vDB['Database'] != "performance_schema"){ 
-			$intNroBD++;
+			$intNroDB++;
 		}
 	}
 
-	return $intNroBD;
+	return $intNroDB;
 }
 
-function mysql_get_databases($strBServidor,$strBBase,
-	$strBPuerto,$strBUsuario,$strBClave){
+function mysql_get_databases($strBServer,$strBBase,
+	$strBPort,$strBUser,$strBPass){
 
 	// DB Connection and get all databases
 	try{
-		$clsBase = new cliente($strBServidor,$strBBase,
-					$strBPuerto,$strBUsuario,
-					$strBClave);
+		$clsBase = new mysql_cli($strBServer,$strBBase,
+					$strBPort,$strBUser,
+					$strBPass);
 		$rstDatabases = NULL;
 		$rstDatabases = $clsBase->get_databases();
 		unset($clsBase);
@@ -311,7 +311,7 @@ function mysql_get_databases($strBServidor,$strBBase,
 	catch(exception $ex)
 	{
 		echo colorStr("\nOcurrio un error al intentar acceder " .
-				"a las base de datos en '" . $strBServidor .
+				"a las base de datos en '" . $strBServer .
 				"'\n","lred");
 		echo colorStr("Error : " . $ex->getMessage() .  
 				"\n\n","lred");
@@ -386,7 +386,7 @@ function mysql_show_config(){
 	echo colorStr("Configuracion de Usuario para Backups - MySQL\n","cyan");
 	echo colorStr("---------------------------------------------\n","cyan");
 	echo "\n";
-	echo colorStr("Paso 1: Conectarse al servidor mysql donde\n".
+	echo colorStr("Paso 1: db_connectse al servidor mysql donde\n".
 		      "        se guardan las bd que desea resguardar\n","yellow");
 	echo "\n";
 	echo colorStr("Paso 2: Ejecutar el siguiente query sql:\n","yellow");
@@ -411,15 +411,15 @@ function show_help(){
 			"white");
 }
  
-class cliente
+class mysql_cli
 {
 	private $m_ad;	// Database Instance
 	
 	function __construct($strServer,$strBase,
-				$strPuerto,$strUsuario,$strClave)
+				$strPuerto,$strUser,$strPass)
 	{
-		$this->m_ad = new acceso($strServer,$strBase,
-				$strPuerto,$strUsuario,$strClave);
+		$this->m_ad = new mysql_dac($strServer,$strBase,
+				$strPuerto,$strUser,$strPass);
 	}
 
 	function __destruct(){
@@ -429,20 +429,20 @@ class cliente
 	public function get_databases()
 	{
 		$strSQL = "SHOW DATABASES";
-                $resultado = $this->m_ad->consultar($strSQL,false);
-                $resultado = $this->m_ad->get_recordset($resultado);
-                if (!$resultado)
+                $result = $this->m_ad->sql_query($strSQL,false);
+                $result = $this->m_ad->get_recordset($result);
+                if (!$result)
                 {
 			throw new exception("No se pudieron recuperar ".
 					"las bases de datos", 5504);
                         return false;
                 }
-                return $resultado;
+                return $result;
 	}
 
 }
 
-class acceso
+class mysql_dac
 {
 	private $m_IDCnx;		// Connection ID
 	private $m_Res;			// Query Result Resource
@@ -451,12 +451,12 @@ class acceso
 	private $m_rst = array();	// Recordset
 	
 	/* Constructor y Destructor */
-	function __construct($strServidor,$strBase,$intPuerto,
-				$strUsuario,$strClave)
+	function __construct($strServer,$strBase,$intPort,
+				$strUser,$strPass)
 	{
 		$this->m_EnTrx = false;
-		$this->conectar($strServidor,$strBase,$intPuerto,
-				$strUsuario,$strClave);
+		$this->db_connect($strServer,$strBase,$intPort,
+				$strUser,$strPass);
 	}
 	
 	function __destruct()
@@ -499,21 +499,21 @@ class acceso
 	}
 	
 	/**
-	 * conectar
+	 * db_connect
 	 * 
 	 * Make a mysql database connection
 	 * @author Fernando Daz Sanchez <sirfids@gmail.com>
 	 * @param $strTipoUsuario
 	 * @return Connection ID or false
 	 * */
-	private function conectar($strServer,$strBase,$intPuerto,
-		$strUsuario,$strClave)
+	private function db_connect($strServer,$strBase,$intPort,
+		$strUser,$strPass)
 	{
 		$this->m_IDCnx = @mysqli_connect($strServer,
-							$strUsuario,
-							$strClave,
+							$strUser,
+							$strPass,
 							$strBase,
-							$intPuerto);
+							$intPort);
 		
 		// If some error happens
 		if( mysqli_connect_errno() )
@@ -527,17 +527,17 @@ class acceso
 	}
 	
 	/**
-	 * consultar
+	 * sql_query
 	 * 
 	 * Make a mysql query or execute an store procedure
 	 * @author Fernando Diaz Sanchez <sirfids@gmail.com>
 	 *
 	 * @param $strSQL
-	 * @param $bolTransaccion
+	 * @param $inTransaction
 	 * @return unknown
 	 * @todo LIMIT
 	 */
-	public function consultar($strSQL, $bolTransaccion = false)
+	public function sql_query($strSQL, $inTransaction = false)
 	{
 		// Free previous result
 		if ($this->m_Res) 
@@ -550,7 +550,7 @@ class acceso
 		if ($strSQL != '')
 		{
 			// Check transaction starting
-			if ( $bolTransaccion == true && 
+			if ( $inTransaction == true && 
 				!$this->m_EnTrx )
 			{
 				$this->m_EnTrx = true;
@@ -565,7 +565,7 @@ class acceso
 				}
 			}
 			
-			// Execure SQL Query
+			// Execute SQL Query
 			$this->m_Res = @mysqli_query($this->m_IDCnx,$strSQL);
 			@mysqli_next_result($this->m_IDCnx);
 			
@@ -573,7 +573,7 @@ class acceso
 			if ( $this->m_Res )
 			{
 				// Check end of transaction
-				if ($bolTransaccion == false && 
+				if ($inTransaction == false && 
 					$this->m_EnTrx)
 				{
 					$this->m_EnTrx = false;
@@ -621,7 +621,7 @@ class acceso
 		{
 			// If SQL Query is empty
 			// check and close the transaction
-			if ($bolTransaccion == false && 
+			if ($inTransaction == false && 
 				$this->m_EnTrx == true)
 			{
 				$this->m_EnTrx = false;

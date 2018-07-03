@@ -18,7 +18,7 @@
 if (file_exists("config.php")){
 	include_once("config.php");
 }else{
-	echo "Error Fatal: falta el archivo config.php\n";
+	echo i18n_str('config_miss');
 	exit(1);
 }
 
@@ -87,7 +87,7 @@ function mysql_backup_server($srv){
 	if (confirm_backup()==false){ return false; }
 
 	if ( VERBOSE )
-		echo colorStr("\n[Generando Backups]\n\n","cyan");
+		echo colorStr("\n". i18n_str('genbk') . "\n\n","lpurple");
 
 	// Loop all databases except *_schema
     foreach($rstDatabases as $vDB)
@@ -102,7 +102,7 @@ function mysql_backup_server($srv){
 
 function delete_old_backups($PathBackup,$strFullPathLog){
 	if ( VERBOSE )
-		echo colorStr("\n[Eliminando Backups Antiguos]\n\n","cyan");
+		echo colorStr("\n" . i18n_str('del_old_bk') . "\n\n","lpurple");
 	// Delete old backups
 	$strCmd = "find $PathBackup/ -mtime +" . MAX_DAYS . 
 		  " -name '*.gz' -exec rm -rf {} \;";
@@ -148,9 +148,8 @@ function mysql_backup_database($srv,$vDB,$i){
 				$strExtraParam);
 
 		if ( VERBOSE ){
-			echo colorStr("Generando Backup para ".
-					"la Base de Datos ","white");
-			echo colorStr($strDBName,"cyan");
+			echo colorStr(i18n_str('bk_ini') . " ","white");
+			echo colorStr($strDBName,"lpurple");
 		}
 
 		$result = mysql_exec_backup($strCmd,$strErrorFile,
@@ -173,8 +172,7 @@ function mysql_exec_backup($strCmd,$strErrorFile,$strDBName,
 	if ( file_exists($strErrorFile) && 
 		strlen(file_get_contents($strErrorFile)) > 0)
 	{
-		$strError = str_pad("[ ERROR ] (Mas detalles en ".
-				   "$strErrorFile)", 
+		$strError = str_pad(i18n_str('bk_error',$strErrorFile), 
 				   30 - strlen($strDBName)," ",
 				   STR_PAD_LEFT) . "\n";
 		if ( VERBOSE ) echo colorStr($strError,"red");
@@ -240,7 +238,7 @@ function confirm_backup(){
 		// Ask confirmation
 		while( $rpta != "Y" && $rpta != "N" )
 		{
-			$rpta = strtoupper(readline("Aceptar (Y/N):"));
+			$rpta = strtoupper(readline(i18n_str('accept')));
 		}
 	
 		if ( $rpta == "N" ) return false;
@@ -253,31 +251,26 @@ function confirm_backup(){
 function mysql_show_resume($strAlias,$intNroDB,$strBServer,$strVersion,
 	$strBPathBK,$strPathLog,$strLibrary,$strBUser){
 	
-	echo colorStr("\n[Resumen de Tareas - Servidor '".
-			$strAlias."']\n","cyan");
-	echo colorStr("\n* Sacar backups de " .
-			"$intNroDB base de datos del servidor '" . 
-			$strBServer . "'\n","white");
-	echo colorStr("* Se utilizara el usuario mysql ","white");
+	echo colorStr("\n" . i18n_str('resume_title', $strAlias) . "\n","lpurple");
+	echo colorStr("\n" . i18n_str('resume_num',$intNroDB,$strBServer) . "\n",
+								"white");
+	echo colorStr(i18n_str('resume_user1') . " ","white");
 	echo colorStr("'$strBUser'","yellow");
-	echo colorStr(" para generar el backup\n","white");
-	echo colorStr("* Los backups se guardaran en la carpeta '","white");
-	echo colorStr($strBPathBK,"yellow");
-	echo colorStr("' de este servidor\n","white");
-	echo colorStr("* Los Logs seran guardados en '","white");
-	echo colorStr($strPathLog,"yellow");
-	echo colorStr("' de este servidor\n","white");
-	echo colorStr("* Se eliminaran los backups con mas de ","white");
+	echo colorStr(" " . i18n_str('resume_user2') . "\n","white");
+	echo colorStr(i18n_str('resume_bpath1') . " ","white");
+	echo colorStr("'$strBPathBK'","yellow");
+	echo colorStr(" " . i18n_str('resume_bpath2')  . "\n","white");
+	echo colorStr(i18n_str('resume_lpath1') . " ","white");
+	echo colorStr("'$strPathLog'","yellow");
+	echo colorStr(" " . i18n_str('resume_lpath2')  . "\n","white");
+	echo colorStr(i18n_str('resume_days1') . " ","white");
 	echo colorStr(MAX_DAYS,"yellow");
-	echo colorStr(" dias de antiguedad\n","white");
+	echo colorStr(" " . i18n_str('resume_days2')  . "\n","white");
 	if ($strLibrary != ""){
-		echo colorStr("* Se seteara temporalmente la siguiente ".
-			"variable de entorno: \n  $strLibrary\n\n","white");
+		echo colorStr( i18n_str('resume_lib',$strLibrary) ."\n\n","white");
 	}
-	if (NOZIP) {echo colorStr("* El backup no sera comprimido ".
-			"con gzip\n","yellow");}
-	if (YESALL){echo colorStr("* El script se esta ejecutando " .
-			"en modo desatendido\n","yellow");}
+	if (NOZIP) {echo colorStr(i18n_str('resume_nzip') . "\n","yellow");}
+	if (YESALL){echo colorStr(i18n_str('resume_mode') . "\n","yellow");}
 }
 
 function mysql_count_databases($rstDatabases){
@@ -310,9 +303,8 @@ function mysql_get_databases($strBServer,$strBBase,
 	}
 	catch(exception $ex)
 	{
-		echo colorStr("\nOcurrio un error al intentar acceder " .
-				"a las base de datos en '" . $strBServer .
-				"'\n","lred");
+		echo colorStr("\n" . i18n_str('mysql_err_cnn',$strBServer) . 
+					  "\n","lred");
 		echo colorStr("Error : " . $ex->getMessage() .  
 				"\n\n","lred");
 		$strLog = date("Ymd H:i:s : ") . "Error : " . 
@@ -383,34 +375,57 @@ function colorStr($string, $fgc = null,
 
 function mysql_show_config(){
 	echo colorStr("---------------------------------------------\n","cyan");
-	echo colorStr("Configuracion de Usuario para Backups - MySQL\n","cyan");
+	echo colorStr("How to configure MySQL Backup Users\n","cyan");
 	echo colorStr("---------------------------------------------\n","cyan");
 	echo "\n";
-	echo colorStr("Paso 1: db_connectse al servidor mysql donde\n".
-		      "        se guardan las bd que desea resguardar\n","yellow");
+	echo colorStr("Step 1: Connect the mysql server where you\n".
+		      "        keep all database you wish to backup\n","yellow");
 	echo "\n";
-	echo colorStr("Paso 2: Ejecutar el siguiente query sql:\n","yellow");
-	echo colorStr("Nota  : Reemplaze el ip y la clave con sus datos\n","yellow");
+	echo colorStr("Step 2: Execute this SQL Query:\n","yellow");
+	echo colorStr("Note  : Replace this-ip and pass with your data\n","yellow");
 	echo "\n";
 	echo "GRANT SELECT, SHOW DATABASES, LOCK TABLES, " .
 		"SHOW VIEW\n ON *.* to 'backup'@'this-ip' " .
-		"identified by 'mi-clave-bd';\n";
+		"identified by 'pass';\n";
 	echo "FLUSH PRIVILEGES;\n\n";
 }
 
 function show_help(){
 
-	echo colorStr("magnet-bk ". VERSION ." - Facilitador " .
-			 "de Backups Remoto BD - " .
+	echo colorStr("magnet-bk ". VERSION ." - Remote Backup Facilitator - " .
 			 "By >>bluenix\n","cyan");
-	echo colorStr("Uso: magnet-bk.php [-nv][-y][-nz]\n","cyan");
-	echo colorStr("Opc: -nv  : No verbose\n","white");
-	echo colorStr("Opc: -y   : Yes to All\n","white");
-	echo colorStr("Opc: -nz  : Without Gzip\n","white");
-	echo colorStr("Opc: --config-mysql  : MySQL User Config Steps\n\n",
+	echo colorStr("Use: magnet-bk.php [-nv][-y][-nz]\n","cyan");
+	echo colorStr("Opt: -nv  : No verbose\n","white");
+	echo colorStr("Opt: -y   : Yes to All\n","white");
+	echo colorStr("Opt: -nz  : Without Gzip\n","white");
+	echo colorStr("Opt: --config-mysql  : MySQL User Config Steps\n\n",
 			"white");
 }
- 
+
+// Returns basic i18n string based on topics
+// Important: This functions needs the global variable 
+//            $config[$lang][$topic] in this format
+//            in order to resolve the string
+function i18n_str($topic){
+	global $config;
+	$i = 0;
+	$lang = isset($config[LANG]) ? LANG : "eng";
+	$tema = isset($config[$lang][$topic]) ? $topic : "bad";
+	$str = $config[$lang][$tema];
+
+	$numargs = func_num_args();
+	if ($numargs > 1){
+			foreach (func_get_args() as $n) {
+					if ($i>0){
+							$str = str_replace("{".$i."}",$n,$str);
+					}
+					$i++;
+			}
+	}
+	return $str;
+}
+
+
 class mysql_cli
 {
 	private $m_ad;	// Database Instance
@@ -429,15 +444,15 @@ class mysql_cli
 	public function get_databases()
 	{
 		$strSQL = "SHOW DATABASES";
-                $result = $this->m_ad->sql_query($strSQL,false);
-                $result = $this->m_ad->get_recordset($result);
-                if (!$result)
-                {
+        $result = $this->m_ad->sql_query($strSQL,false);
+        $result = $this->m_ad->get_recordset($result);
+        if (!$result)
+        {
 			throw new exception("No se pudieron recuperar ".
 					"las bases de datos", 5504);
                         return false;
-                }
-                return $result;
+        }
+        return $result;
 	}
 
 }

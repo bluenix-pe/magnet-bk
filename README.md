@@ -1,5 +1,5 @@
 # [magnet-bk](https://bluenix.pe/tools/scripting/magnet-bk.html)
-![version](https://img.shields.io/badge/version-1.0.0-blue.svg) ![license](https://img.shields.io/badge/license-MIT-green.svg)
+![version](https://img.shields.io/badge/version-1.3.0-blue.svg) ![license](https://img.shields.io/badge/license-MIT-green.svg)
 
 magnet-bk is an small and fast tool that wraps official backup utilities from database providers (like mysqldump) in order to make easy local or remote backups in just one place.
 
@@ -31,4 +31,4 @@ Note: Use **./magnet-bk.php --config-mysql** to see how to create remote db user
 
 ## Example
 
-<img src="http://www.bluenix.pe/tools/scripting/magnet-bk/magnet-bk.png" />
+<img src="http://www.bluenix.pe/tools/scripting/magnet-bk/magnet-bk1.png" />

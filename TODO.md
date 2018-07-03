@@ -32,10 +32,6 @@
 
   It will allow you to manage other databases providers (like pgsql, ifx, db2, etc.)
 
-* Add i18n support
-
-  It will allow you to configure your favorite language
-
 * Add recovery support
 
   It will allow you to recover a database
